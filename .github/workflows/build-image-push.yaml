@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image_dir: ${{ file('images.txt') }}
         platform: [linux/amd64, linux/arm64]
     steps:
       - uses: actions/checkout@v4
@@ -24,13 +23,16 @@ jobs:
         env:
           DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
+      - name: Read images.txt
+        id: read-images
+        run: |
+          image_dirs=$(cat images.txt)
+          echo "::set-output name=image_dirs::$image_dirs"
+
       - name: Build and push images
         run: |
-          for image_dir in ${{ matrix.image_dir }}; do
-            version=$(cat "./$$image_dir/VERSION")
-            image_name="corpdk/$$image_dir"
-            docker buildx build --push --platform ${{ matrix.platform }} -t "$image_name:$version" -t "$image_name:latest" ./$$image_dir
+          for image_dir in ${{ steps.read-images.outputs.image_dirs }}; do
+            version=$(cat "./$image_dir/VERSION")
+            image_name="corpdk/$image_dir"
+            docker buildx build --push --platform ${{ matrix.platform }} -t "$image_name:$version" -t "$image_name:latest" ./$image_dir
           done
-
-env:
-  DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
