@@ -23,6 +23,7 @@ jobs:
           done
           image_matrix=${image_matrix%,}
           image_matrix+="]}"
+          echo "matrix=$image_matrix"
           echo "matrix=$image_matrix" >> $GITHUB_ENV
 
   build-and-push:
