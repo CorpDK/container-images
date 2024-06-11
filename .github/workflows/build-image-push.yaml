@@ -24,8 +24,7 @@ jobs:
           image_matrix=${image_matrix%,}
           image_matrix+="]}"
           echo "matrix=$image_matrix"
-          echo "matrix=$image_matrix" >> $GITHUB_ENV
-          echo "::set-output name=matrix::$image_matrix"
+          echo "matrix=$image_matrix" >> $GITHUB_OUTPUT
 
   build-and-push:
     needs: generate-matrix
