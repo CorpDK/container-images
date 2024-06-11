@@ -6,11 +6,30 @@ on:
   workflow_dispatch: # For manual trigger
 
 jobs:
-  build-and-push:
+  generate-matrix:
     runs-on: ubuntu-latest
-    # strategy:
-      # matrix:
-      #   platform: [linux/amd64, linux/arm64]
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read images.txt and generate matrix
+        id: set-matrix
+        run: |
+          image_dirs=$(cat images.txt | tr '\n' ' ')
+          image_matrix="{\"include\":["
+          for dir in $image_dirs; do
+            image_matrix+="{\"image_dir\":\"$dir\"},"
+          done
+          image_matrix=${image_matrix%,}
+          image_matrix+="]}"
+          echo "matrix=$image_matrix" >> $GITHUB_ENV
+
+  build-and-push:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,16 +42,8 @@ jobs:
         env:
           DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
-      - name: Read images.txt
-        id: read-images
-        run: |
-          image_dirs=$(cat images.txt)
-          echo "::set-output name=image_dirs::$image_dirs"
-
       - name: Build and push images
         run: |
-          for image_dir in ${{ steps.read-images.outputs.image_dirs }}; do
-            version=$(cat "./$image_dir/VERSION")
-            image_name="corpdk/$image_dir"
-            docker buildx build --push --platform "linux/amd64,linux/arm64" -t "$image_name:$version" -t "$image_name:latest" ./$image_dir
-          done
+          version=$(cat "./${{ matrix.image_dir }}/VERSION")
+          image_name="corpdk/${{ matrix.image_dir }}"
+          docker buildx build --push --platform "linux/amd64,linux/arm64" -t "$image_name:$version" -t "$image_name:latest" ./${{ matrix.image_dir }}
