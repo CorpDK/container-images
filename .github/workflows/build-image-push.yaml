@@ -19,7 +19,7 @@ jobs:
 
       - name: Login to Docker registry with access token
         run: |
-          echo "$DOCKER_ACCESS_TOKEN" | docker login -u _oauth --password-stdin
+          echo "$DOCKER_ACCESS_TOKEN" | docker login -u dave4272t --password-stdin
         env:
           DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
