@@ -9,8 +9,8 @@ COPY --from=etcdbuilder --chown=root:root /opt/bitnami/etcd/bin/etcdctl /opt/bit
 
 ENV ETCDCTL_API=3
 ENV ETCDCTL_CACERT="/etc/kubernetes/pki/etcd/ca.crt"
-ENV ETCDCTL_CERT="/etc/kubernetes/pki/etcd/client.crt"
-ENV ETCDCTL_KEY="/etc/kubernetes/pki/etcd/client.key"
+ENV ETCDCTL_CERT="/etc/kubernetes/pki/etcd/peer.crt"
+ENV ETCDCTL_KEY="/etc/kubernetes/pki/etcd/peer.key"
 
 ENTRYPOINT [ "ping", "1.1.1.1" ]
 
