@@ -19,7 +19,35 @@ jobs:
           image_dirs=$(cat images.txt | tr '\n' ' ')
           image_matrix="{\"include\":["
           for dir in $image_dirs; do
-            image_matrix+="{\"image_dir\":\"$dir\"},"
+            version_data=$(cat ${dir}/version.json)
+            template=$(echo "${version_data}" | jq -r '.template')
+            for row in $(echo "${version_data}" | jq -r '.versions[] | @base64'); do
+              latest=""
+              _jq() {
+                echo ${row} | base64 --decode | jq -r ${1}
+              }
+              build_args=""
+              for key in $(echo "${row}" | base64 --decode | jq -r 'keys_unsorted[]'); do
+                value=$(_jq .${key})
+                if [[ "$key" == "latest" ]]; then
+                  latest=${value}
+                  continue
+                fi
+                build_args+="--build-arg $(echo ${key} | awk '{print toupper($0) "_VERSION"}')=${value} "
+                export $(echo ${key} | awk '{print toupper($0) "_VERSION"}')=${value}
+              done
+
+              # Construct image tag using dynamic template variables
+              image_tag=$(eval echo "${template}")
+
+              # Determine additional latest tag if latest:true
+              additional_tag=""
+              if [ "${latest}" == "true" ]; then
+                additional_tag="latest"
+              fi
+
+              image_matrix+="{\"image_dir\":\"${dir}\",\"image_tag\":\"${image_tag}\",\"build_args\":\"${build_args}\",\"additional_tag\":\"${additional_tag}\"},"
+            done
           done
           image_matrix=${image_matrix%,}
           image_matrix+="]}"
@@ -43,8 +71,15 @@ jobs:
         env:
           DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
+      - name: Echo matrix values
+        run: |
+          echo "${{ toJSON(matrix) }}"
+
       - name: Build and push images
         run: |
-          version=$(cat "./${{ matrix.image_dir }}/VERSION")
           image_name="corpdk/${{ matrix.image_dir }}"
-          docker buildx build --push --platform "linux/amd64,linux/arm64" -t "$image_name:$version" -t "$image_name:latest" ./${{ matrix.image_dir }}
+          docker buildx build --push --platform "linux/amd64,linux/arm64" \
+            ${{ matrix.build_args }} \
+            -t "$image_name:${{ matrix.image_tag }}" \
+            $(if [ "${{ matrix.additional_tag }}" == "latest" ]; then echo "-t $image_name:latest"; fi) \
+            ./${{ matrix.image_dir }}
