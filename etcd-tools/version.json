@@ -1,0 +1,22 @@
+{
+  "versions": [
+    {
+      "etcd": "3.5.12",
+      "alpine": "3.20",
+      "latest": true
+    },
+    {
+      "etcd": "3.5.12",
+      "alpine": "3.20.1"
+    },
+    {
+      "etcd": "3.5.14",
+      "alpine": "3.20"
+    },
+    {
+      "etcd": "3.5.14",
+      "alpine": "3.20.1"
+    }
+  ],
+  "template": "${ETCD_VERSION}-alpine${ALPINE_VERSION}"
+}
