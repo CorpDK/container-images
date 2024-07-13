@@ -1,0 +1,12 @@
+{
+  "versions": [
+    {
+      "python": "3.12-alpine3.20",
+      "latest": true
+    },
+    {
+      "python": "3.12.4"
+    }
+  ],
+  "template": "${PYTHON_VERSION}"
+}

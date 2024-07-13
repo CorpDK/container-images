@@ -1,1 +1,2 @@
 etcd-tools
+b2-tools
